@@ -254,8 +254,15 @@ function parseJSONObject_(object, query, options, includeFunc, transformFunc) {
   parseData_(headers, data, "", {rowIndex: 1}, object, query, options, includeFunc);
   parseHeaders_(headers, data);
   transformData_(data, options, transformFunc);
-  
-  return hasOption_(options, "noHeaders") ? (data.length > 1 ? data.slice(1) : new Array()) : data;
+
+//  return hasOption_(options, "noHeaders") ? (data.length > 1 ? data.slice(1) : new Array()) : data;
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var sheet = ss.getActiveSheet();
+  dataRange = sheet.getRange(2, 2, data.length, data[0].length); // 3 Denotes total number of entites
+  dataRange.setValues(data);
+
 }
 
 /** 
@@ -405,7 +412,7 @@ function applyXPathRule_(rule, path, options) {
 function defaultTransform_(data, row, column, options) {
   if (!data[row][column]) {
     if (row < 2 || hasOption_(options, "noInherit")) {
-      data[row][column] = "";
+      data[row][column] = null;
     } else {
       data[row][column] = data[row-1][column];
     }
@@ -420,12 +427,17 @@ function defaultTransform_(data, row, column, options) {
   }
   
   if (!hasOption_(options, "noTruncate") && data[row][column]) {
-    data[row][column] = data[row][column].toString().substr(0, 256);
+    data[row][column] = data[row][column];
   }
 
   if (hasOption_(options, "debugLocation")) {
     data[row][column] = "[" + row + "," + column + "]" + data[row][column];
   }
+
+  if(data[row][column])
+    data[row][column] = convertIfNumber(data[row][column]);
+  else
+    data[row][column] = 0;
 }
 
 /** 
@@ -523,5 +535,13 @@ function toBool_(value) {
 function convertToBool_(map, key) {
   if (map[key] != null) {
     map[key] = toBool_(map[key]);
-  }  
+  }
+}
+
+function convertIfNumber(num) {
+  if (num >=0 || num < 0){
+    return parseFloat(num);
+  }else{
+    return num;
+  }
 }
